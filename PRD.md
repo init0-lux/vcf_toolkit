@@ -1,514 +1,492 @@
 # Product Requirements Document (PRD)
 
-## vcf_toolkit
+## Product Name
+
+**vcf-toolkit**
 
 ---
 
 ## 1. Overview
 
-VCF Toolkit is a developer-first toolkit for cleaning, normalizing, deduplicating, and converting contact data across formats. It is designed primarily as an NPM package with a strong CLI interface, enabling engineers and operators to process messy contact datasets reliably and deterministically.
+vcf-toolkit is a developer-first toolkit for processing, normalizing, deduplicating, and converting contact data. It is designed as a **Go-native SDK and CLI**, with additional distribution layers (including an NPM wrapper) to maximize accessibility across ecosystems.
 
-The product addresses a common but under-served problem: **contact data is messy, inconsistent, and fragmented**, especially in contexts like hackathons, college organizations, CRM imports, and event registrations.
+The core problem addressed is the **inconsistency and fragmentation of contact data** across sources such as CSV exports, registration forms, CRM systems, and manually curated datasets. These datasets frequently contain:
 
-VCF Toolkit provides:
+- Inconsistent naming formats
+- Duplicate entries
+- Invalid or unstandardized phone numbers
+- Poorly structured fields
+- Missing or ambiguous metadata
 
-* Deterministic normalization
-* Explainable deduplication
-* Seamless CSV → VCF conversion
-* Extensible and composable APIs
-
----
-
-## 2. Goals
-
-### Primary Goals
-
-1. Provide a **reliable contact normalization layer** for developers.
-2. Enable **high-confidence deduplication with explainability**.
-3. Offer a **frictionless CLI** for non-programmatic workflows.
-4. Become a **default utility in hackathons and data ingestion pipelines**.
-
-### Secondary Goals
-
-1. Support global datasets with locale-aware normalization.
-2. Enable extensibility via plugins and custom rules.
-3. Maintain high performance for large datasets (10k–100k contacts).
+vcf-toolkit provides a deterministic, composable, and scriptable solution for transforming such data into clean, standardized, and deduplicated outputs suitable for downstream systems or direct usage (e.g., mobile contact imports).
 
 ---
 
-## 3. Non-Goals
+## 2. Product Positioning
 
-* Not a full CRM system
-* Not a UI-heavy product (CLI-first)
-* Not a cloud service (initially)
-* Not focused on real-time streaming pipelines (batch-oriented)
+vcf-toolkit is positioned as:
 
----
+> A low-level, reliable data processing tool for contact datasets, designed for engineers and power users.
 
-## 4. Target Users
+It is not a GUI application, nor a CRM system. It operates as:
 
-### Primary Users
-
-* Developers working with user/contact datasets
-* Hackathon participants
-* Backend engineers building CRM or onboarding flows
-* Growth/ops engineers handling CSV imports
-
-### Secondary Users
-
-* College clubs managing member databases
-* Event organizers exporting/importing contacts
-* Individuals migrating phone contacts
+- A Go SDK for integration into backend systems
+- A CLI tool for direct data processing
+- A thin NPM-distributed binary wrapper for accessibility
 
 ---
 
-## 5. Key Use Cases
+## 3. Goals
 
-### Use Case 1: Hackathon Registration Cleanup
+### 3.1 Primary Goals
 
-* Input: messy CSV with inconsistent names, duplicate entries
-* Output: clean, deduplicated dataset
-
-### Use Case 2: CSV to Phone Import
-
-* Input: CSV from Google Forms
-* Output: VCF file importable into phones
-
-### Use Case 3: CRM Ingestion Pipeline
-
-* Input: multiple CSVs from different sources
-* Output: unified, deduplicated contact database
-
-### Use Case 4: WhatsApp Contact Preparation
-
-* Normalize phone numbers
-* Remove duplicates
-* Export to VCF
+1. Provide a **deterministic and reliable contact normalization system**.
+2. Enable **high-confidence deduplication with transparent reasoning**.
+3. Offer a **Unix-style CLI interface** that integrates seamlessly into pipelines.
+4. Serve as a **Go-native SDK** for integration into other applications.
+5. Provide **frictionless distribution across ecosystems** (Go, binary, NPM wrapper).
 
 ---
 
-## 6. Functional Requirements
+### 3.2 Secondary Goals
+
+1. Support large datasets (10k–100k contacts) efficiently.
+2. Enable extensibility through configurable rules and future plugin systems.
+3. Provide sensible defaults optimized for real-world usage (e.g., phone normalization).
+4. Ensure consistent behavior across platforms.
 
 ---
 
-### 6.1 Name Normalization Module
+## 4. Non-Goals
 
-#### Description
-
-Processes raw name strings and extracts structured identity components.
-
-#### Features
-
-* Remove suffixes (e.g., “CSI VIT”, “IEEE”, “ACM”)
-* Extract organization tags
-* Normalize casing (Title Case)
-* Unicode normalization (NFC/NFKC)
-* Nickname expansion (optional)
-* Strip noise (extra whitespace, punctuation)
-
-#### Input
-
-```ts
-string
-```
-
-#### Output
-
-```ts
-{
-  fullName: string;
-  firstName?: string;
-  lastName?: string;
-  organization?: string;
-  normalized: boolean;
-}
-```
-
-#### Config Options
-
-```ts
-{
-  stripSuffix?: boolean;
-  orgPatterns?: string[];
-  expandNicknames?: boolean;
-  locale?: string;
-}
-```
+- Not a graphical application
+- Not an interactive-first tool
+- Not a cloud-hosted service
+- Not a CRM or contact management platform
+- Not a real-time streaming processor
 
 ---
 
-### 6.2 Phone Normalization Module
+## 5. Target Users
 
-#### Description
+### 5.1 Primary Users
 
-Standardizes phone numbers into E.164 format.
+- Backend engineers processing user/contact data
+- Developers building CRM or onboarding systems
+- Hackathon participants handling registration data
+- Operators managing CSV-based datasets
 
-#### Features
+### 5.2 Secondary Users
 
-* Country code inference (default: IN → +91)
-* Remove formatting characters
-* Validate number length and format
-* Handle multiple phone formats
-
-#### Input
-
-```ts
-string
-```
-
-#### Output
-
-```ts
-{
-  raw: string;
-  normalized: string; // +919876543210
-  valid: boolean;
-  country?: string;
-}
-```
-
-#### Config
-
-```ts
-{
-  defaultCountry?: string;
-  strict?: boolean;
-}
-```
+- Student organizations managing member lists
+- Event organizers exporting/importing contacts
+- Individuals performing bulk contact cleanup
 
 ---
 
-### 6.3 Email Normalization Module
+## 6. Core Use Cases
 
-#### Features
+### 6.1 Contact Dataset Cleanup
 
-* Lowercasing
-* Gmail dot removal (optional)
-* Alias stripping (+tag)
-* Validation
-
-#### Output
-
-```ts
-{
-  normalized: string;
-  valid: boolean;
-}
-```
+Input: CSV with inconsistent formatting and duplicates
+Output: Clean, normalized, deduplicated dataset
 
 ---
 
-### 6.4 CSV → VCF Converter
+### 6.2 CSV to VCF Conversion
 
-#### Description
+Input: CSV file from forms or exports
+Output: Valid `.vcf` file importable into mobile devices
 
-Converts structured CSV data into VCF format.
+---
 
-#### Features
+### 6.3 CRM Data Ingestion
 
-* Header auto-mapping:
+Input: Multiple contact datasets from different sources
+Output: Unified and deduplicated contact list
 
-  * name, full_name → FN
-  * phone, mobile → TEL
-  * email → EMAIL
-* Multi-value support (multiple phones/emails)
-* Default fallbacks for missing fields
-* Optional deduplication during conversion
-* Error logging for invalid rows
+---
 
-#### CLI Example
+### 6.4 Pipeline Integration
+
+Usage within scripts and pipelines for automated processing:
 
 ```bash
-npx aux-contacts csv2vcf input.csv -o contacts.vcf --dedupe
+cat contacts.csv | vcf-toolkit dedupe > clean.csv
 ```
-
-#### Output
-
-* `.vcf` file compliant with vCard 3.0+
 
 ---
 
-### 6.5 Deduplication Engine
+## 7. Functional Requirements
+
+---
+
+### 7.1 Name Normalization
 
 #### Description
 
-Identifies and merges duplicate contacts using multiple signals.
+Transforms raw name strings into structured and standardized formats.
+
+#### Capabilities
+
+- Remove suffixes (e.g., organization tags)
+- Extract organization identifiers
+- Normalize casing (Title Case)
+- Trim whitespace and noise
+- Unicode normalization
+- Optional nickname expansion
+
+#### Input
+
+- Raw string
+
+#### Output
+
+- Structured name object including:
+  - Full name
+  - Optional first/last name
+  - Extracted organization (if present)
+  - Normalization status
+
+#### Configurability
+
+- Enable/disable suffix stripping
+- Provide custom organization patterns
+- Locale-aware formatting options
+
+---
+
+### 7.2 Phone Number Normalization
+
+#### Description
+
+Standardizes phone numbers into a canonical format.
+
+#### Capabilities
+
+- Remove formatting characters
+- Normalize to international format (E.164)
+- Validate number structure
+- Infer country code where missing
+
+#### Output
+
+- Normalized phone number
+- Validation status
+- Optional country metadata
+
+#### Configurability
+
+- Default country
+- Strict validation mode
+
+---
+
+### 7.3 Email Normalization
+
+#### Description
+
+Standardizes email addresses for comparison and storage.
+
+#### Capabilities
+
+- Lowercasing
+- Alias stripping (e.g., `+tag`)
+- Provider-specific normalization (optional)
+- Validation
+
+#### Output
+
+- Normalized email
+- Validation status
+
+---
+
+### 7.4 CSV to VCF Conversion
+
+#### Description
+
+Converts CSV contact data into VCF format.
+
+#### Capabilities
+
+- Automatic header mapping
+- Support for multiple phone/email fields
+- Fallback handling for missing names
+- Optional deduplication during conversion
+- Error logging for malformed rows
+
+#### Output
+
+- Valid `.vcf` file compliant with vCard standards
+
+---
+
+### 7.5 Deduplication Engine
+
+#### Description
+
+Identifies and groups duplicate contacts using multiple signals.
 
 #### Matching Signals
 
-| Signal       | Type  | Weight |
-| ------------ | ----- | ------ |
-| Email        | Exact | High   |
-| Phone        | Exact | High   |
-| Name         | Fuzzy | Medium |
-| Organization | Fuzzy | Low    |
+- Email (exact match)
+- Phone (normalized exact match)
+- Name (fuzzy matching)
+- Organization (optional signal)
 
-#### Features
+#### Capabilities
 
-* Fuzzy matching (Levenshtein / Jaro-Winkler)
-* Confidence scoring
-* Explainability (reasoning output)
-* Configurable thresholds
-* Cluster-based output (not just filtering)
-
-#### Input
-
-```ts
-Contact[]
-```
+- Confidence scoring
+- Configurable thresholds
+- Cluster-based output (grouping duplicates)
+- Deterministic matching behavior
+- Explainability via reason tracing
 
 #### Output
 
-```ts
-{
-  clusters: Contact[][];
-  merged: Contact[];
-  report: {
-    duplicatesFound: number;
-    confidenceDistribution: number[];
-  }
-}
-```
-
-#### Config
-
-```ts
-{
-  threshold?: number; // default: 0.8
-  strategy?: "safe" | "aggressive";
-}
-```
+- Clusters of related contacts
+- Merged contact list (optional)
+- Deduplication report
 
 ---
 
-### 6.6 Contact Merge Logic
+### 7.6 Contact Merge Logic
+
+#### Description
+
+Combines duplicate contacts into a single canonical representation.
 
 #### Rules
 
-* Prefer non-null values
-* Combine phone numbers and emails
-* Preserve metadata
-* Maintain source traceability
-
-#### Output
-
-```ts
-MergedContact
-```
+- Prefer non-null fields
+- Merge phone numbers and emails
+- Preserve metadata
+- Maintain traceability of sources
 
 ---
 
-### 6.7 CLI Interface
+### 7.7 CLI Interface
 
-#### Commands
+#### Description
+
+Provides a Unix-style command-line interface.
+
+#### Requirements
+
+- Fully non-interactive by default
+- Comprehensive `--help` and subcommand help
+- Support for piping and redirection
+- Deterministic output
+
+#### Example Commands
 
 ```bash
-aux normalize <file>
-aux dedupe <file>
-aux convert <file> --to vcf
+vcf-toolkit normalize contacts.csv
+vcf-toolkit dedupe contacts.csv --out clean.csv
+vcf-toolkit convert contacts.csv --to vcf
 ```
 
 #### Flags
 
-* `--out <file>`
-* `--dry-run`
-* `--verbose`
-* `--json`
-* `--dedupe`
-
-#### Behavior
-
-* Should not crash on invalid rows
-* Logs errors with line references
-* Supports piping
+- `--out`
+- `--json`
+- `--dry-run`
+- `--verbose`
+- `--dedupe`
 
 ---
 
-## 7. Non-Functional Requirements
+### 7.8 SDK Usage (Go)
 
-### Performance
+#### Description
 
-* Handle 10k contacts under 2 seconds
-* Deduplication optimized via:
+Expose all functionality as a Go module.
 
-  * Hash maps (email/phone)
-  * Blocking strategies
+#### Requirements
 
-### Reliability
+- Importable via `go get`
+- Stable and minimal API surface
+- No side effects (no logging, no global state)
+- Deterministic outputs
 
-* Deterministic outputs
-* No silent failures
+#### Usage Contexts
 
-### Extensibility
-
-* Plugin system (v2)
-* Config-driven rules
-
-### Usability
-
-* Minimal setup
-* Sensible defaults (India-first)
+- Backend services
+- Data pipelines
+- Internal tooling
 
 ---
 
-## 8. Architecture
+## 8. Distribution Requirements
 
-### Modules
+vcf-toolkit must support multiple distribution channels while maintaining a single source of truth.
 
-```
-/core
-/normalize
-/dedupe
-/convert
-/cli
-/plugins (future)
-```
+### 8.1 Primary Distribution
 
-### Design Principles
+- Go module (`go get`)
 
-* Functional, stateless modules
-* Composable APIs
-* Strong typing (TypeScript-first)
+### 8.2 Binary Distribution
+
+- Precompiled static binaries
+- Hosted via release artifacts
+
+### 8.3 NPM Wrapper
+
+- Thin wrapper that:
+  - Detects platform
+  - Downloads appropriate binary
+  - Caches locally
+  - Executes transparently
+
+#### Purpose
+
+- Lower barrier for JavaScript ecosystem users
+- Provide zero-install experience
 
 ---
 
-## 9. API Design
+## 9. Non-Functional Requirements
 
-### Example
+### 9.1 Performance
 
-```ts
-import {
-  normalizeName,
-  normalizePhone,
-  dedupeContacts,
-  csvToVcf
-} from "@aux/contacts";
-```
+- Efficient processing of large datasets (≥10k contacts)
+- Optimized deduplication (avoid naive O(n²) where possible)
+
+---
+
+### 9.2 Reliability
+
+- Deterministic behavior across runs
+- No silent failures
+- Clear error reporting
+
+---
+
+### 9.3 Usability
+
+- Minimal setup
+- Clear CLI interface
+- Strong documentation
+
+---
+
+### 9.4 Extensibility
+
+- Config-driven behavior
+- Future plugin support
+
+---
+
+### 9.5 Portability
+
+- Consistent behavior across operating systems
+- Minimal dependency footprint
 
 ---
 
 ## 10. Data Model
 
-### Contact
+### Contact Structure
 
-```ts
-type Contact = {
-  id?: string;
-  name?: string;
-  phones?: string[];
-  emails?: string[];
-  organization?: string;
-  metadata?: Record<string, any>;
-};
-```
+Fields include:
+
+- Name
+- Phone numbers (multiple)
+- Emails (multiple)
+- Organization
+- Metadata
+
+The model must support:
+
+- Partial data
+- Multiple values per field
+- Extensibility
 
 ---
 
 ## 11. Error Handling
 
-* Invalid inputs → warnings, not crashes
-* Structured error objects
-* CLI logs:
+### Requirements
 
-  * row number
-  * field issue
-  * suggested fix
+- Invalid rows must not crash execution
+- Errors should include:
+  - Location (row/field)
+  - Reason
+  - Suggested correction (if possible)
+
+### CLI Behavior
+
+- Errors printed to stderr
+- Optional verbose/debug modes
 
 ---
 
 ## 12. Metrics for Success
 
-### Adoption Metrics
+### Adoption
 
-* Weekly downloads (NPM)
-* CLI usage frequency
-* GitHub stars
+- Number of downloads (binary + NPM wrapper)
+- Go module usage
 
-### Performance Metrics
+### Performance
 
-* Deduplication accuracy (>90% expected)
-* False positive rate (<5%)
+- Processing time for standard datasets
+- Deduplication accuracy
+
+### Reliability
+
+- Error rates in real-world datasets
+- Stability across versions
 
 ---
 
 ## 13. Risks
 
-| Risk                       | Mitigation                  |
-| -------------------------- | --------------------------- |
-| Incorrect deduplication    | Explainability + thresholds |
-| Locale-specific edge cases | Configurable rules          |
-| Performance degradation    | Blocking + indexing         |
-| Over-complex API           | Strong defaults             |
+| Risk                           | Mitigation                              |
+| ------------------------------ | --------------------------------------- |
+| Incorrect deduplication        | Configurable thresholds, explainability |
+| Data loss during merge         | Conservative merge strategy             |
+| Cross-platform inconsistencies | Extensive testing                       |
+| Distribution complexity        | Unified release pipeline                |
 
 ---
 
-## 14. Future Roadmap
+## 14. Roadmap
 
 ### v1
 
-* Normalization (name, phone, email)
-* Basic dedupe
-* CSV → VCF
-* CLI
+- Core normalization (name, phone, email)
+- Basic deduplication
+- CSV → VCF conversion
+- CLI interface
+- Go SDK
 
 ### v2
 
-* Confidence scoring
-* Explainability
-* Plugin system
-* Performance optimization
+- Confidence scoring improvements
+- Explainability enhancements
+- Performance optimizations
 
 ### v3
 
-* Web UI
-* API service
-* CRM integrations
+- Plugin system
+- Advanced configuration
+- Additional format support
 
 ---
 
-## 15. Competitive Landscape
+## 15. Open Questions
 
-Current tools:
-
-* Basic CSV converters (limited)
-* CRM tools (heavyweight, non-developer-friendly)
-* Ad-hoc scripts (non-reusable)
-
-### Differentiation
-
-* Developer-first
-* Deterministic dedupe
-* CLI excellence
-* India-first defaults
+1. Default deduplication threshold values
+2. Level of aggressiveness in merging
+3. Scope of provider-specific email normalization
+4. Extent of locale-specific name handling
 
 ---
 
-## 16. Open Questions
+## 16. Summary
 
-1. Should nickname expansion be enabled by default?
-2. What should be the default dedupe threshold?
-3. How aggressive should merging be in v1?
-4. Should plugins be supported in v1 or deferred?
+vcf-toolkit is a systems-oriented tool focused on solving a specific, recurring problem in data processing workflows. Its design prioritizes determinism, composability, and usability across environments, while maintaining a strong foundation as a Go-native SDK and CLI utility.
 
----
-
-## 17. Appendix
-
-### Example Flow
-
-Input CSV:
-
-```
-Name,Phone,Email
-Ojaswi Om - CSI VIT,9876543210,ojaswi@gmail.com
-Ojaswi Om,+919876543210,ojaswi@gmail.com
-```
-
-Output:
-
-* One merged contact
-* Cleaned name
-* Normalized phone
-* Deduplicated entry
-
----
+The product’s success depends on its ability to remain simple, predictable, and robust, while offering enough flexibility to handle real-world variability in contact data.
