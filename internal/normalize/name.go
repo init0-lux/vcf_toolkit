@@ -1,15 +1,30 @@
 package normalize
 
 import (
+	"context"
+	"errors"
+	"os"
 	"strings"
 
 	"github.com/init0/vcf-toolkit/internal/model"
 )
 
+var ErrNoLLMClient = errors.New("llm enabled but no LLM client configured")
+
+// NameLLM is a provider-agnostic interface for name normalization.
+// Implementations can wrap OpenAI, Gemini, Claude, local models, etc.
+type NameLLM interface {
+	NormalizeName(ctx context.Context, raw string) (model.NormalizedName, error)
+}
+
 type NameConfig struct {
 	StripSuffix bool
 	OrgPatterns []string
 	UseLLM      bool
+
+	// LLMClient is optional; when set and UseLLM=true, it will be used to
+	// normalize names. If nil, normalization falls back to rule-based behavior.
+	LLMClient NameLLM
 }
 
 func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
@@ -18,9 +33,15 @@ func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
 		return model.NormalizedName{Normalized: false}
 	}
 
+	// If LLM mode is enabled, prefer the configured client but always fall back
+	// to deterministic rule-based normalization when unavailable or untrusted.
 	if cfg.UseLLM {
-		if normalized, err := callLLMForNameNormalization(raw); err == nil {
-			return normalized
+		// Back-compat for CLI environments: allow presence of an API key env var
+		// to signal that a client is likely configured elsewhere.
+		if cfg.LLMClient != nil || strings.TrimSpace(os.Getenv("OPENAI_API_KEY")) != "" {
+			if normalized, err := callLLMForNameNormalization(raw, cfg); err == nil && normalized.Normalized && normalized.FullName != "" {
+				return normalized
+			}
 		}
 	}
 
@@ -65,13 +86,11 @@ func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
 	}
 }
 
-// callLLMForNameNormalization is a stub for future LLM integration.
-// Currently returns Normalized: false to trigger rule-based fallback.
-func callLLMForNameNormalization(raw string) (model.NormalizedName, error) {
-	return model.NormalizedName{
-		FullName:   raw,
-		Normalized: false,
-	}, nil
+func callLLMForNameNormalization(raw string, cfg NameConfig) (model.NormalizedName, error) {
+	if cfg.LLMClient == nil {
+		return model.NormalizedName{}, ErrNoLLMClient
+	}
+	return cfg.LLMClient.NormalizeName(context.Background(), raw)
 }
 
 // ruleBasedNameNormalization applies title-casing and suffix stripping.

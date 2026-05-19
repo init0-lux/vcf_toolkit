@@ -307,23 +307,27 @@ func ConvertCSVToVCF(r io.Reader, w io.Writer, cfg Config) (*ConversionSummary, 
 		dc := dedupe.DefaultConfig()
 		dedupeResult := dedupe.Deduplicate(contacts, dc)
 
-		if len(dedupeResult.Merged) > 0 {
-			inMerged := make(map[string]bool)
-			for _, mc := range dedupeResult.Merged {
-				inMerged[mc.Contact.Name+mc.Contact.Organization] = true
-			}
-
-			var final []model.Contact
-			for _, c := range contacts {
-				if !inMerged[c.Name+c.Organization] {
-					final = append(final, c)
+		// Preserve all singletons, replace duplicate clusters with their merged
+		// representative. Avoid heuristic "name+org" identity keys, which can
+		// drop distinct contacts.
+		var final []model.Contact
+		mergeIdx := 0
+		for _, cluster := range dedupeResult.Clusters {
+			if len(cluster) <= 1 {
+				if len(cluster) == 1 {
+					final = append(final, cluster[0])
 				}
+				continue
 			}
-			for _, mc := range dedupeResult.Merged {
-				final = append(final, mc.Contact)
+			if mergeIdx < len(dedupeResult.Merged) {
+				final = append(final, dedupeResult.Merged[mergeIdx].Contact)
+				mergeIdx++
+				continue
 			}
-			contacts = final
+			// Fallback: should not happen, but keep one contact rather than drop.
+			final = append(final, cluster[0])
 		}
+		contacts = final
 
 		cfg.logf("After deduplication: %d contacts (removed %d duplicates)",
 			len(contacts), len(result.Contacts)-len(contacts))

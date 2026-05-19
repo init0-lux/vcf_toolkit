@@ -4,6 +4,7 @@ package dedupe
 
 import (
 	"math"
+	"sort"
 	"strings"
 
 	"github.com/init0/vcf-toolkit/internal/model"
@@ -51,31 +52,91 @@ func Deduplicate(contacts []model.Contact, cfg Config) model.DedupeResult {
 	}
 }
 
-// buildClusters performs O(n²) greedy clustering. Each contact is compared
-// pairwise against all subsequent unassigned contacts. Contacts scoring above
-// the threshold are grouped into the same cluster.
+// buildClusters forms connected components over candidate matches.
+// Candidates are generated via cheap blocking (email/phone exact keys, org exact,
+// and a small name prefix key), then filtered via scorePair() >= threshold.
+//
+// This fixes the transitive-matching bug in greedy anchor clustering and avoids
+// naive O(n^2) comparisons for typical datasets.
 func buildClusters(contacts []model.Contact, cfg Config) [][]model.Contact {
 	n := len(contacts)
-	assigned := make([]bool, n)
-	var clusters [][]model.Contact
+	ds := newDisjointSet(n)
 
-	for i := range n {
-		if assigned[i] {
-			continue
+	// Build blocking buckets.
+	emailBuckets := make(map[string][]int)
+	phoneBuckets := make(map[string][]int)
+	orgBuckets := make(map[string][]int)
+	nameBuckets := make(map[string][]int)
+
+	for i, c := range contacts {
+		for _, e := range c.Emails {
+			if ne := normalize.NormalizeEmailStr(e); ne != "" {
+				emailBuckets[ne] = append(emailBuckets[ne], i)
+			}
 		}
-		cluster := []model.Contact{contacts[i]}
-		assigned[i] = true
+		for _, p := range c.Phones {
+			if dp := normalize.PhoneDigits(p); dp != "" {
+				phoneBuckets[dp] = append(phoneBuckets[dp], i)
+			}
+		}
+		if org := strings.TrimSpace(strings.ToLower(c.Organization)); org != "" {
+			orgBuckets[org] = append(orgBuckets[org], i)
+		}
 
-		for j := i + 1; j < n; j++ {
-			if assigned[j] {
+		// Name bucketing is intentionally weak to avoid accidental giant buckets:
+		// we only use the first 6 chars of the normalized name string.
+		if ns := normalizeNameString(c.Name); ns != "" {
+			if len(ns) > 6 {
+				ns = ns[:6]
+			}
+			nameBuckets[ns] = append(nameBuckets[ns], i)
+		}
+	}
+
+	// Evaluate bucket pairs and union when score >= threshold.
+	applyBucket := func(bucket map[string][]int) {
+		for _, idxs := range bucket {
+			if len(idxs) < 2 {
 				continue
 			}
-			if scorePair(contacts[i], contacts[j], cfg) >= cfg.Threshold {
-				cluster = append(cluster, contacts[j])
-				assigned[j] = true
+			// De-dupe indices in case multiple fields map to same key.
+			sort.Ints(idxs)
+			j := 0
+			for i := 1; i < len(idxs); i++ {
+				if idxs[i] != idxs[j] {
+					j++
+					idxs[j] = idxs[i]
+				}
+			}
+			idxs = idxs[:j+1]
+
+			for a := 0; a < len(idxs); a++ {
+				for b := a + 1; b < len(idxs); b++ {
+					i := idxs[a]
+					k := idxs[b]
+					if scorePair(contacts[i], contacts[k], cfg) >= cfg.Threshold {
+						ds.union(i, k)
+					}
+				}
 			}
 		}
-		clusters = append(clusters, cluster)
+	}
+
+	applyBucket(emailBuckets)
+	applyBucket(phoneBuckets)
+	applyBucket(orgBuckets)
+	applyBucket(nameBuckets)
+
+	// Build clusters from connected components.
+	byRoot := make(map[int][]model.Contact, n)
+	for i := range n {
+		r := ds.find(i)
+		byRoot[r] = append(byRoot[r], contacts[i])
+	}
+
+	clusters := make([][]model.Contact, 0, len(byRoot))
+	for _, c := range byRoot {
+		clusters = append(clusters, c)
 	}
 	return clusters
 }
@@ -163,6 +224,48 @@ func matchOrganizations(a, b string) float64 {
 		return 0.8
 	}
 	return 0.0
+}
+
+type disjointSet struct {
+	parent []int
+	rank   []uint8
+}
+
+func newDisjointSet(n int) *disjointSet {
+	p := make([]int, n)
+	for i := range p {
+		p[i] = i
+	}
+	return &disjointSet{
+		parent: p,
+		rank:   make([]uint8, n),
+	}
+}
+
+func (ds *disjointSet) find(x int) int {
+	for ds.parent[x] != x {
+		ds.parent[x] = ds.parent[ds.parent[x]]
+		x = ds.parent[x]
+	}
+	return x
+}
+
+func (ds *disjointSet) union(a, b int) {
+	ra := ds.find(a)
+	rb := ds.find(b)
+	if ra == rb {
+		return
+	}
+	if ds.rank[ra] < ds.rank[rb] {
+		ds.parent[ra] = rb
+		return
+	}
+	if ds.rank[ra] > ds.rank[rb] {
+		ds.parent[rb] = ra
+		return
+	}
+	ds.parent[rb] = ra
+	ds.rank[ra]++
 }
 
 func mergeClusters(clusters [][]model.Contact) []model.MergedContact {
