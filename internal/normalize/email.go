@@ -43,22 +43,26 @@ func NormalizeEmail(raw string, cfg EmailConfig) model.NormalizedEmail {
 	}
 }
 
+// NormalizeEmailStr normalizes an email to a comparable string:
+// lowercase, plus - alias stripped.
+// returns empty string if invalid.
+// helper for dedupe
+func NormalizeEmailStr(email string) string {
+	email = strings.TrimSpace(strings.ToLower(email))
+	idx := strings.Index(email, "@")
+	if idx < 0 {
+		return ""
+	}
+	local := email[:idx]
+	domain := email[idx+1:]
+	if plus := strings.Index(local, "+"); plus >= 0 {
+		local = local[:plus]
+	}
+	return local + "@" + domain
+}
+
 func stripAlias(email string) string {
-	atIndex := strings.Index(email, "@")
-	if atIndex == -1 {
-		return email
-	}
-
-	localPart := email[:atIndex]
-	domain := email[atIndex:]
-
-	// remove alias ("+spam" in "user+spam@example.com")
-	plusIndex := strings.Index(localPart, "+")
-	if plusIndex != -1 {
-		localPart = localPart[:plusIndex]
-	}
-
-	return localPart + domain
+	return NormalizeEmailStr(email)
 }
 
 func validateEmail(email string, cfg EmailConfig) bool {

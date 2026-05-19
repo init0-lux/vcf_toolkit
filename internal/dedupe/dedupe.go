@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/init0/vcf-toolkit/internal/model"
+	"github.com/init0/vcf-toolkit/internal/normalize"
 )
 
 type Config struct {
@@ -103,12 +104,12 @@ func scorePair(a, b model.Contact, cfg Config) float64 {
 
 func matchEmails(a, b []string) float64 {
 	for _, ea := range a {
-		na := normalizeEmail(ea)
+		na := normalize.NormalizeEmailStr(ea)
 		if na == "" {
 			continue
 		}
 		for _, eb := range b {
-			nb := normalizeEmail(eb)
+			nb := normalize.NormalizeEmailStr(eb)
 			if nb == "" {
 				continue
 			}
@@ -120,28 +121,14 @@ func matchEmails(a, b []string) float64 {
 	return 0.0
 }
 
-func normalizeEmail(email string) string {
-	email = strings.TrimSpace(strings.ToLower(email))
-	idx := strings.Index(email, "@")
-	if idx < 0 {
-		return ""
-	}
-	local := email[:idx]
-	domain := email[idx+1:]
-	if plus := strings.Index(local, "+"); plus >= 0 {
-		local = local[:plus]
-	}
-	return local + "@" + domain
-}
-
 func matchPhones(a, b []string) float64 {
 	for _, pa := range a {
-		cleanedA := normalizePhoneDigits(pa)
+		cleanedA := normalize.PhoneDigits(pa)
 		if cleanedA == "" {
 			continue
 		}
 		for _, pb := range b {
-			cleanedB := normalizePhoneDigits(pb)
+			cleanedB := normalize.PhoneDigits(pb)
 			if cleanedB == "" {
 				continue
 			}
@@ -151,28 +138,6 @@ func matchPhones(a, b []string) float64 {
 		}
 	}
 	return 0.0
-}
-
-func normalizePhoneDigits(s string) string {
-	s = removeNonNumeric(s)
-	if len(s) == 0 {
-		return ""
-	}
-	if s[0] == '0' {
-		s = strings.TrimLeft(s, "0")
-	}
-	return s
-}
-
-func removeNonNumeric(s string) string {
-	var b strings.Builder
-	b.Grow(len(s))
-	for _, r := range s {
-		if r >= '0' && r <= '9' {
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
 }
 
 func matchNames(a, b string) float64 {
@@ -241,14 +206,14 @@ func mergeIntoOne(cluster []model.Contact) model.MergedContact {
 	emailSet := make(map[string]bool)
 	for _, c := range cluster {
 		for _, p := range c.Phones {
-			digits := normalizePhoneDigits(p)
+			digits := normalize.PhoneDigits(p)
 			if digits != "" && !phoneSet[digits] {
 				phoneSet[digits] = true
 				best.Phones = append(best.Phones, p)
 			}
 		}
 		for _, e := range c.Emails {
-			ne := normalizeEmail(e)
+			ne := normalize.NormalizeEmailStr(e)
 			if ne != "" && !emailSet[ne] {
 				emailSet[ne] = true
 				best.Emails = append(best.Emails, e)

@@ -1,7 +1,6 @@
 package normalize
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/init0/vcf-toolkit/internal/model"
@@ -64,9 +63,25 @@ func normalizePhone(raw string, cfg PhoneConfig) (string, bool) {
 	return cleaned, true
 }
 
+// PhoneDigits strips all non-numeric characters and removes leading zeros
+// Returns a comparable digit string.
+func PhoneDigits(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	digits := b.String()
+	if len(digits) > 0 && digits[0] == '0' {
+		digits = strings.TrimLeft(digits, "0")
+	}
+	return digits
+}
+
 func removeNonNumeric(s string) string {
-	re := regexp.MustCompile(`[^0-9]`)
-	return re.ReplaceAllString(s, "")
+	return PhoneDigits(s)
 }
 
 func extractCountryCode(e164 string) string {

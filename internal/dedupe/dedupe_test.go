@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/init0/vcf-toolkit/internal/model"
+	"github.com/init0/vcf-toolkit/internal/normalize"
 )
 
 func TestDefaultConfig(t *testing.T) {
@@ -244,7 +245,7 @@ func TestJaroWinkler_Empty(t *testing.T) {
 }
 
 func TestNormalizeEmail_StripsPlus(t *testing.T) {
-	result := normalizeEmail("User+tag@Example.com")
+	result := normalize.NormalizeEmailStr("User+tag@Example.com")
 	expected := "user@example.com"
 	if result != expected {
 		t.Errorf("expected %q, got %q", expected, result)
@@ -252,7 +253,7 @@ func TestNormalizeEmail_StripsPlus(t *testing.T) {
 }
 
 func TestNormalizeEmail_Invalid(t *testing.T) {
-	result := normalizeEmail("notanemail")
+	result := normalize.NormalizeEmailStr("notanemail")
 	if result != "" {
 		t.Errorf("expected empty for invalid email, got %q", result)
 	}
