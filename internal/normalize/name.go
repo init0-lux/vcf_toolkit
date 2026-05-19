@@ -14,8 +14,9 @@ type NameConfig struct {
 
 func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
 	raw = strings.TrimSpace(raw)
+	parts := strings.Fields(raw)
 	if raw == "" {
-		return model.NormalizedName{Normalized: false}
+		return model.NormalizedName{FullName: raw, Normalized: false}
 	}
 
 	if cfg.UseLLM {
@@ -25,26 +26,46 @@ func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
 		}
 	}
 
-	return ruleBasedNameNormalization(raw, cfg)
+	organization := ""
+	if cfg.StripSuffix {
+		for _, pattern := range cfg.OrgPatterns {
+			if strings.HasSuffix(raw, pattern) {
+				organization = pattern
+				raw = strings.TrimSuffix(raw, pattern)
+				raw = strings.TrimSpace(raw)
+				parts = strings.Fields(raw)
+				break
+			}
+		}
+	}
+
+	if len(parts) == 1 {
+		return model.NormalizedName{
+			FullName:     raw,
+			FirstName:    parts[0],
+			Organization: organization,
+			Normalized:   true,
+		}
+	} else if len(parts) > 1 {
+		return model.NormalizedName{
+			FullName:     raw,
+			FirstName:    parts[0],
+			LastName:     parts[len(parts)-1],
+			Organization: organization,
+			Normalized:   true,
+		}
+	}
+	return model.NormalizedName{FullName: raw, Organization: organization, Normalized: false}
 }
 
 func callLLMForNameNormalization(raw string) (model.NormalizedName, error) {
-	// Example API call payload
-	payload := map[string]string{"name": raw}
+	// api call to be implemented
+	return model.NormalizedName{}, nil
 
-	// API call to the LLM service
-	response, err := llmAPIClient.Call("normalizeName", payload)
-	if err != nil {
-		return model.NormalizedName{}, err
-	}
-
-	// Parse the response into the NormalizedName structure
+	// parse the response into the NormalizedName structure
 	normalized := model.NormalizedName{
-		FullName:     response["fullName"],
-		FirstName:    response["firstName"],
-		LastName:     response["lastName"],
-		Organization: response["organization"],
-		Normalized:   true,
+
+		Normalized: true,
 	}
 
 	return normalized, nil

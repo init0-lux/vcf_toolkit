@@ -30,6 +30,12 @@ type NormalizedPhone struct {
 	Country    string
 }
 
+type NormalizedEmail struct {
+	Raw        string
+	Normalized string
+	Valid      bool
+}
+
 type MergedContact struct {
 	Contact
 	MergedFrom  []string
