@@ -12,6 +12,7 @@ import (
 type Config = internal.Config
 type ParseResult = internal.ParseResult
 type ConversionSummary = internal.ConversionSummary
+type NormalizeVCFConfig = internal.NormalizeVCFConfig
 
 const (
 	FieldName  = internal.FieldName
@@ -28,6 +29,9 @@ func ConvertCSVToVCF(r io.Reader, w io.Writer, cfg Config) (*ConversionSummary, 
 	return internal.ConvertCSVToVCF(r, w, cfg)
 }
 
+func NormalizeCSVToVCF(r io.Reader, w io.Writer, cfg NormalizeVCFConfig) (*ConversionSummary, error) {
+	return internal.NormalizeCSVToVCF(r, w, cfg)
+}
+
 // Re-export for convenience.
 type Contact = model.Contact
-
