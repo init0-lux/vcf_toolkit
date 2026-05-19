@@ -1,3 +1,5 @@
+// Package dedupe identifies and groups duplicate contacts using configurable
+// matching signals: email, phone, name (fuzzy), and organization.
 package dedupe
 
 import (
@@ -28,31 +30,30 @@ func DefaultConfig() Config {
 	}
 }
 
+// Deduplicate runs greedy pairwise clustering on the contact list.
+// Returns clusters of duplicates, merged contacts, and a summary report.
 func Deduplicate(contacts []model.Contact, cfg Config) model.DedupeResult {
-	n := len(contacts)
-	if n == 0 {
-		return model.DedupeResult{
-			Clusters: [][]model.Contact{},
-			Merged:   []model.MergedContact{},
-			Report:   model.DedupeReport{},
-		}
+	if len(contacts) == 0 {
+		return model.DedupeResult{}
 	}
 
 	clusters := buildClusters(contacts, cfg)
 	merged := mergeClusters(clusters)
-	report := model.DedupeReport{
-		TotalInput:      n,
-		DuplicatesFound: n - len(clusters),
-		ClustersFormed:  len(clusters),
-	}
 
 	return model.DedupeResult{
 		Clusters: clusters,
 		Merged:   merged,
-		Report:   report,
+		Report: model.DedupeReport{
+			TotalInput:      len(contacts),
+			DuplicatesFound: len(contacts) - len(clusters),
+			ClustersFormed:  len(clusters),
+		},
 	}
 }
 
+// buildClusters performs O(n²) greedy clustering. Each contact is compared
+// pairwise against all subsequent unassigned contacts. Contacts scoring above
+// the threshold are grouped into the same cluster.
 func buildClusters(contacts []model.Contact, cfg Config) [][]model.Contact {
 	n := len(contacts)
 	assigned := make([]bool, n)
@@ -69,8 +70,7 @@ func buildClusters(contacts []model.Contact, cfg Config) [][]model.Contact {
 			if assigned[j] {
 				continue
 			}
-			score := scorePair(contacts[i], contacts[j], cfg)
-			if score >= cfg.Threshold {
+			if scorePair(contacts[i], contacts[j], cfg) >= cfg.Threshold {
 				cluster = append(cluster, contacts[j])
 				assigned[j] = true
 			}
@@ -80,23 +80,22 @@ func buildClusters(contacts []model.Contact, cfg Config) [][]model.Contact {
 	return clusters
 }
 
+// scorePair computes a weighted similarity score between two contacts.
+// Returns a value in [0, 1] where higher values indicate a likely match.
 func scorePair(a, b model.Contact, cfg Config) float64 {
 	var score float64
 
-	if emailScore := matchEmails(a.Emails, b.Emails); emailScore > 0 {
-		score += emailScore * cfg.EmailExactWeight
+	if s := matchEmails(a.Emails, b.Emails); s > 0 {
+		score += s * cfg.EmailExactWeight
 	}
-
-	if phoneScore := matchPhones(a.Phones, b.Phones); phoneScore > 0 {
-		score += phoneScore * cfg.PhoneExactWeight
+	if s := matchPhones(a.Phones, b.Phones); s > 0 {
+		score += s * cfg.PhoneExactWeight
 	}
-
-	if nameScore := matchNames(a.Name, b.Name); nameScore > cfg.MinNameSimilarity {
-		score += nameScore * cfg.NameFuzzyWeight
+	if s := matchNames(a.Name, b.Name); s > cfg.MinNameSimilarity {
+		score += s * cfg.NameFuzzyWeight
 	}
-
-	if orgScore := matchOrganizations(a.Organization, b.Organization); orgScore > 0 {
-		score += orgScore * cfg.OrganizationWeight
+	if s := matchOrganizations(a.Organization, b.Organization); s > 0 {
+		score += s * cfg.OrganizationWeight
 	}
 
 	return score
@@ -123,16 +122,12 @@ func matchEmails(a, b []string) float64 {
 
 func matchPhones(a, b []string) float64 {
 	for _, pa := range a {
-		cleanedA := normalize.PhoneDigits(pa)
-		if cleanedA == "" {
+		da := normalize.PhoneDigits(pa)
+		if da == "" {
 			continue
 		}
 		for _, pb := range b {
-			cleanedB := normalize.PhoneDigits(pb)
-			if cleanedB == "" {
-				continue
-			}
-			if cleanedA == cleanedB {
+			if db := normalize.PhoneDigits(pb); da == db {
 				return 1.0
 			}
 		}
@@ -152,8 +147,7 @@ func matchNames(a, b string) float64 {
 func normalizeNameString(s string) string {
 	s = strings.TrimSpace(s)
 	s = strings.ToLower(s)
-	fields := strings.Fields(s)
-	return strings.Join(fields, " ")
+	return strings.Join(strings.Fields(s), " ")
 }
 
 func matchOrganizations(a, b string) float64 {
@@ -177,27 +171,32 @@ func mergeClusters(clusters [][]model.Contact) []model.MergedContact {
 		if len(cluster) == 1 {
 			continue
 		}
-		mc := mergeIntoOne(cluster)
-		merged = append(merged, mc)
+		merged = append(merged, mergeIntoOne(cluster))
 	}
 	return merged
 }
 
+// mergeIntoOne combines a cluster of duplicate contacts into a single canonical
+// contact. It prefers non-empty values for name and org, and deduplicates
+// phone/email lists by normalized value.
 func mergeIntoOne(cluster []model.Contact) model.MergedContact {
 	if len(cluster) == 0 {
 		return model.MergedContact{}
 	}
 
 	best := cluster[0]
-	var reasons []string
 	var from []string
 
 	for _, c := range cluster {
 		if c.Source.File != "" && c.Source.Row > 0 {
 			from = append(from, c.Source.File)
 		}
-		best = mergeField(best, c, "name", func() bool { return c.Name != "" })
-		best = mergeField(best, c, "org", func() bool { return c.Organization != "" })
+		if best.Name == "" && c.Name != "" {
+			best.Name = c.Name
+		}
+		if best.Organization == "" && c.Organization != "" {
+			best.Organization = c.Organization
+		}
 	}
 
 	best.Phones = nil
@@ -206,55 +205,36 @@ func mergeIntoOne(cluster []model.Contact) model.MergedContact {
 	emailSet := make(map[string]bool)
 	for _, c := range cluster {
 		for _, p := range c.Phones {
-			digits := normalize.PhoneDigits(p)
-			if digits != "" && !phoneSet[digits] {
-				phoneSet[digits] = true
+			if d := normalize.PhoneDigits(p); d != "" && !phoneSet[d] {
+				phoneSet[d] = true
 				best.Phones = append(best.Phones, p)
 			}
 		}
 		for _, e := range c.Emails {
-			ne := normalize.NormalizeEmailStr(e)
-			if ne != "" && !emailSet[ne] {
+			if ne := normalize.NormalizeEmailStr(e); ne != "" && !emailSet[ne] {
 				emailSet[ne] = true
 				best.Emails = append(best.Emails, e)
 			}
 		}
 	}
 
-	reasons = append(reasons, "merged_duplicate_cluster")
 	confidence := 1.0 - (1.0 / float64(len(cluster)+1))
 
 	return model.MergedContact{
 		Contact:     best,
 		MergedFrom:  from,
 		Confidence:  math.Round(confidence*100) / 100,
-		MergeReason: reasons,
+		MergeReason: []string{"merged_duplicate_cluster"},
 	}
 }
 
-func mergeField(best, c model.Contact, field string, cond func() bool) model.Contact {
-	if !cond() {
-		return best
-	}
-	switch field {
-	case "name":
-		if best.Name == "" {
-			best.Name = c.Name
-		}
-	case "org":
-		if best.Organization == "" {
-			best.Organization = c.Organization
-		}
-	}
-	return best
-}
-
+// jaroWinklerSimilarity computes string similarity with prefix boost.
+// Well-suited for short strings like names.
 func jaroWinklerSimilarity(s1, s2 string) float64 {
 	if s1 == s2 {
 		return 1.0
 	}
-	len1 := len(s1)
-	len2 := len(s2)
+	len1, len2 := len(s1), len(s2)
 	if len1 == 0 || len2 == 0 {
 		return 0.0
 	}
@@ -267,18 +247,13 @@ func jaroWinklerSimilarity(s1, s2 string) float64 {
 	s1Matches := make([]bool, len1)
 	s2Matches := make([]bool, len2)
 
-	var matches float64
-	var transpositions float64
+	var matches, transpositions float64
 
 	for i := range len1 {
 		start := max(0, i-matchDistance)
 		end := min(i+matchDistance+1, len2)
-
 		for j := start; j < end; j++ {
-			if s2Matches[j] {
-				continue
-			}
-			if s1[i] != s2[j] {
+			if s2Matches[j] || s1[i] != s2[j] {
 				continue
 			}
 			s1Matches[i] = true
@@ -320,9 +295,7 @@ func jaroWinklerSimilarity(s1, s2 string) float64 {
 			break
 		}
 	}
-
-	prefixScale := 0.1
-	return jaro + float64(prefix)*prefixScale*(1.0-jaro)
+	return jaro + float64(prefix)*0.1*(1.0-jaro)
 }
 
 func max(a, b int) int {

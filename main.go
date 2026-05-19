@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"github.com/init0/vcf-toolkit/cmd"
 )
 
 func main() {
-	fmt.Println("vcf-toolkit")
+	cmd.Execute()
 }

@@ -15,13 +15,13 @@ func NormalizePhone(raw string, cfg PhoneConfig) model.NormalizedPhone {
 	orig := raw
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return model.NormalizedPhone{Raw: orig, Valid: false, Country: ""}
+		return model.NormalizedPhone{Raw: orig, Valid: false}
 	}
 
 	hasPlus := strings.HasPrefix(raw, "+")
 	normalized, valid := normalizePhone(raw, cfg)
 
-	country := ""
+	var country string
 	if valid {
 		if hasPlus {
 			country = extractCountryCode(normalized)
@@ -45,24 +45,20 @@ func normalizePhone(raw string, cfg PhoneConfig) (string, bool) {
 	if len(cleaned) < 10 || len(cleaned) > 15 {
 		return "", false
 	}
-
 	if hasPlus {
 		return "+" + cleaned, true
 	}
-
 	if cfg.DefaultCountry != "" {
 		return cfg.DefaultCountry + cleaned, true
 	}
-
 	if cfg.StrictValidation {
 		return "", false
 	}
-
 	return cleaned, true
 }
 
-// PhoneDigits strips all non-numeric characters and removes leading zeros
-// Returns a comparable digit string.
+// PhoneDigits strips non-numeric characters and removes leading zeros.
+// Returns a comparable digit string suitable for deduplication lookups.
 func PhoneDigits(s string) string {
 	var b strings.Builder
 	b.Grow(len(s))

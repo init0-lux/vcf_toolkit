@@ -14,19 +14,19 @@ type NameConfig struct {
 
 func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
 	raw = strings.TrimSpace(raw)
-	parts := strings.Fields(raw)
 	if raw == "" {
-		return model.NormalizedName{FullName: raw, Normalized: false}
+		return model.NormalizedName{Normalized: false}
 	}
 
 	if cfg.UseLLM {
-		normalized, err := callLLMForNameNormalization(raw)
-		if err == nil {
+		if normalized, err := callLLMForNameNormalization(raw); err == nil {
 			return normalized
 		}
 	}
 
-	organization := ""
+	parts := strings.Fields(raw)
+	var organization string
+
 	if cfg.StripSuffix {
 		for _, pattern := range cfg.OrgPatterns {
 			if strings.HasSuffix(raw, pattern) {
@@ -39,6 +39,14 @@ func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
 		}
 	}
 
+	if len(parts) == 0 {
+		return model.NormalizedName{
+			FullName:     raw,
+			Organization: organization,
+			Normalized:   false,
+		}
+	}
+
 	if len(parts) == 1 {
 		return model.NormalizedName{
 			FullName:     raw,
@@ -46,31 +54,28 @@ func NormalizeName(raw string, cfg NameConfig) model.NormalizedName {
 			Organization: organization,
 			Normalized:   true,
 		}
-	} else if len(parts) > 1 {
-		return model.NormalizedName{
-			FullName:     raw,
-			FirstName:    parts[0],
-			LastName:     parts[len(parts)-1],
-			Organization: organization,
-			Normalized:   true,
-		}
 	}
-	return model.NormalizedName{FullName: raw, Organization: organization, Normalized: false}
+
+	return model.NormalizedName{
+		FullName:     raw,
+		FirstName:    parts[0],
+		LastName:     parts[len(parts)-1],
+		Organization: organization,
+		Normalized:   true,
+	}
 }
 
+// callLLMForNameNormalization is a stub for future LLM integration.
+// Currently returns Normalized: false to trigger rule-based fallback.
 func callLLMForNameNormalization(raw string) (model.NormalizedName, error) {
-	// api call to be implemented
-	return model.NormalizedName{}, nil
-
-	// parse the response into the NormalizedName structure
-	normalized := model.NormalizedName{
-
-		Normalized: true,
-	}
-
-	return normalized, nil
+	return model.NormalizedName{
+		FullName:   raw,
+		Normalized: false,
+	}, nil
 }
 
+// ruleBasedNameNormalization applies title-casing and suffix stripping.
+// Deprecated: use NormalizeName with UseLLM=false instead.
 func ruleBasedNameNormalization(raw string, cfg NameConfig) model.NormalizedName {
 	normalized := model.NormalizedName{
 		FullName:   strings.Title(raw),

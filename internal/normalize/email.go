@@ -1,3 +1,4 @@
+// Package normalize provides contact data normalization (name, phone, email).
 package normalize
 
 import (
@@ -14,39 +15,31 @@ type EmailConfig struct {
 }
 
 func NormalizeEmail(raw string, cfg EmailConfig) model.NormalizedEmail {
-	rawSuffix := raw
+	orig := raw
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return model.NormalizedEmail{Raw: rawSuffix, Valid: false}
+		return model.NormalizedEmail{Raw: orig, Valid: false}
 	}
 
-	// lowercase and strip aliases
 	normalized := strings.ToLower(raw)
 	if cfg.StripAliases {
 		normalized = stripAlias(normalized)
 	}
 
-	// validate email format
 	valid := validateEmail(normalized, cfg)
-
 	if !valid {
-		return model.NormalizedEmail{
-			Raw:   rawSuffix,
-			Valid: false,
-		}
+		return model.NormalizedEmail{Raw: orig, Valid: false}
 	}
 
 	return model.NormalizedEmail{
-		Raw:        rawSuffix,
+		Raw:        orig,
 		Normalized: normalized,
-		Valid:      valid,
+		Valid:      true,
 	}
 }
 
-// NormalizeEmailStr normalizes an email to a comparable string:
-// lowercase, plus - alias stripped.
-// returns empty string if invalid.
-// helper for dedupe
+// NormalizeEmailStr returns a comparable form: lowercase, plus-alias stripped.
+// Returns empty string for unparseable inputs.
 func NormalizeEmailStr(email string) string {
 	email = strings.TrimSpace(strings.ToLower(email))
 	idx := strings.Index(email, "@")
@@ -70,8 +63,6 @@ func validateEmail(email string, cfg EmailConfig) bool {
 		_, err := mail.ParseAddress(email)
 		return err == nil
 	}
-
-	// basic regex validation for leniency
 	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	return re.MatchString(email)
 }
