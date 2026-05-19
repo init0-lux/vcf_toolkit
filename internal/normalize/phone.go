@@ -40,7 +40,7 @@ func NormalizePhone(raw string, cfg PhoneConfig) model.NormalizedPhone {
 
 func normalizePhone(raw string, cfg PhoneConfig) (string, bool) {
 	hasPlus := strings.HasPrefix(raw, "+")
-	cleaned := removeNonNumeric(raw)
+	cleaned := PhoneDigits(raw)
 
 	if len(cleaned) < 10 || len(cleaned) > 15 {
 		return "", false
@@ -49,8 +49,6 @@ func normalizePhone(raw string, cfg PhoneConfig) (string, bool) {
 	if hasPlus {
 		return "+" + cleaned, true
 	}
-
-	cleaned = strings.TrimLeft(cleaned, "0")
 
 	if cfg.DefaultCountry != "" {
 		return cfg.DefaultCountry + cleaned, true
@@ -78,10 +76,6 @@ func PhoneDigits(s string) string {
 		digits = strings.TrimLeft(digits, "0")
 	}
 	return digits
-}
-
-func removeNonNumeric(s string) string {
-	return PhoneDigits(s)
 }
 
 func extractCountryCode(e164 string) string {
