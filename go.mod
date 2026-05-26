@@ -1,4 +1,4 @@
-module github.com/init0/vcf-toolkit
+module github.com/init0-lux/vcf-toolkit
 
 go 1.24.2
 

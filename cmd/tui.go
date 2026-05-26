@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/init0/vcf-toolkit/tui"
+	"github.com/init0-lux/vcf-toolkit/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -23,4 +23,3 @@ deduplication, and CSV->VCF conversion.
 func init() {
 	rootCmd.AddCommand(tuiCmd)
 }
-

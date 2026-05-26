@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/init0/vcf-toolkit/cmd"
+	"github.com/init0-lux/vcf-toolkit/cmd"
 )
 
 func main() {

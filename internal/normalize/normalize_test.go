@@ -3,7 +3,7 @@ package normalize
 import (
 	"testing"
 
-	"github.com/init0/vcf-toolkit/internal/model"
+	"github.com/init0-lux/vcf-toolkit/internal/model"
 )
 
 func TestNormalizeName(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/init0/vcf-toolkit/internal/normalize"
+	"github.com/init0-lux/vcf-toolkit/internal/normalize"
 )
 
 func TestNormalizeCSVToVCF_NormalizesEmailAndPhone(t *testing.T) {

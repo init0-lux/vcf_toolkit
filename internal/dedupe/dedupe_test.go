@@ -3,8 +3,8 @@ package dedupe
 import (
 	"testing"
 
-	"github.com/init0/vcf-toolkit/internal/model"
-	"github.com/init0/vcf-toolkit/internal/normalize"
+	"github.com/init0-lux/vcf-toolkit/internal/model"
+	"github.com/init0-lux/vcf-toolkit/internal/normalize"
 )
 
 func TestDefaultConfig(t *testing.T) {

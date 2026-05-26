@@ -1,6 +1,6 @@
 package normalize
 
-import internal "github.com/init0/vcf-toolkit/internal/normalize"
+import internal "github.com/init0-lux/vcf-toolkit/internal/normalize"
 
 // Public SDK wrapper around the internal implementation.
 // Consumers should import this package, not the internal one.

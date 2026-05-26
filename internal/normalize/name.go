@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/init0/vcf-toolkit/internal/model"
+	"github.com/init0-lux/vcf-toolkit/internal/model"
 )
 
 var ErrNoLLMClient = errors.New("llm enabled but no LLM client configured")

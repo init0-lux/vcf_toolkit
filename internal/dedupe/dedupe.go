@@ -7,8 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/init0/vcf-toolkit/internal/model"
-	"github.com/init0/vcf-toolkit/internal/normalize"
+	"github.com/init0-lux/vcf-toolkit/internal/model"
+	"github.com/init0-lux/vcf-toolkit/internal/normalize"
 )
 
 type Config struct {

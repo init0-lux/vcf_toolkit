@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/init0/vcf-toolkit/internal/model"
+	"github.com/init0-lux/vcf-toolkit/internal/model"
 )
 
 type EmailConfig struct {

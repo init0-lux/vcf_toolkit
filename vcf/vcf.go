@@ -3,8 +3,8 @@ package vcf
 import (
 	"io"
 
-	internal "github.com/init0/vcf-toolkit/internal/vcf"
-	"github.com/init0/vcf-toolkit/model"
+	internal "github.com/init0-lux/vcf-toolkit/internal/vcf"
+	"github.com/init0-lux/vcf-toolkit/model"
 )
 
 type ParseResult = internal.ParseResult

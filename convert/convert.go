@@ -3,8 +3,8 @@ package convert
 import (
 	"io"
 
-	internal "github.com/init0/vcf-toolkit/internal/convert"
-	"github.com/init0/vcf-toolkit/model"
+	internal "github.com/init0-lux/vcf-toolkit/internal/convert"
+	"github.com/init0-lux/vcf-toolkit/model"
 )
 
 // Public SDK wrapper around the internal implementation.

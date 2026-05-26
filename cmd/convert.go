@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/init0/vcf-toolkit/internal/convert"
+	"github.com/init0-lux/vcf-toolkit/internal/convert"
 	"github.com/spf13/cobra"
 )
 

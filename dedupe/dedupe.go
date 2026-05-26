@@ -1,8 +1,8 @@
 package dedupe
 
 import (
-	internal "github.com/init0/vcf-toolkit/internal/dedupe"
-	"github.com/init0/vcf-toolkit/model"
+	internal "github.com/init0-lux/vcf-toolkit/internal/dedupe"
+	"github.com/init0-lux/vcf-toolkit/model"
 )
 
 // Public SDK wrapper around the internal implementation.
@@ -15,4 +15,3 @@ func Deduplicate(contacts []model.Contact, cfg Config) model.DedupeResult {
 	// model.Contact is an alias over internal/model.Contact, so this is safe.
 	return internal.Deduplicate(contacts, cfg)
 }
-

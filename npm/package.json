@@ -1,0 +1,28 @@
+{
+  "name": "@init0-lux/vcf-toolkit",
+  "version": "0.0.0",
+  "description": "Run vcf-toolkit via npx",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/init0-lux/vcf-toolkit.git"
+  },
+  "bin": {
+    "vcf-toolkit": "bin/vcf-toolkit.js"
+  },
+  "files": [
+    "bin/**",
+    "package.json",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "tar": "^6.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "UNLICENSED"
+}

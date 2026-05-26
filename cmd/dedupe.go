@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/init0/vcf-toolkit/internal/dedupe"
-	"github.com/init0/vcf-toolkit/internal/model"
+	"github.com/init0-lux/vcf-toolkit/internal/dedupe"
+	"github.com/init0-lux/vcf-toolkit/internal/model"
 	"github.com/spf13/cobra"
 )
 

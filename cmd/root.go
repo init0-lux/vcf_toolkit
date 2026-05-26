@@ -25,7 +25,7 @@ deduplicating, and converting contact data.
 It operates as a Go SDK and CLI for transforming inconsistent, fragmented
 contact datasets into clean, standardized, and deduplicated outputs.
 
-Documentation: https://github.com/init0/vcf-toolkit`,
+Documentation: https://github.com/init0-lux/vcf-toolkit`,
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }

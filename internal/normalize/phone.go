@@ -3,7 +3,7 @@ package normalize
 import (
 	"strings"
 
-	"github.com/init0/vcf-toolkit/internal/model"
+	"github.com/init0-lux/vcf-toolkit/internal/model"
 )
 
 type PhoneConfig struct {

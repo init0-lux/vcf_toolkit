@@ -1,6 +1,6 @@
 package model
 
-import internal "github.com/init0/vcf-toolkit/internal/model"
+import internal "github.com/init0-lux/vcf-toolkit/internal/model"
 
 // Public SDK surface: these are type aliases over the internal implementation.
 // This keeps the CLI free to use internal packages while making the module
@@ -17,4 +17,3 @@ type MergedContact = internal.MergedContact
 type DedupeReport = internal.DedupeReport
 type DedupeResult = internal.DedupeResult
 type ParseError = internal.ParseError
-
