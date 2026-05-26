@@ -299,6 +299,10 @@ Build the CLI:
 go build -o bin/vcf-toolkit .
 ```
 
+## License
+
+MIT. See [LICENSE](./LICENSE).
+
 ## Repository layout
 
 - `cmd/`: CLI subcommands
