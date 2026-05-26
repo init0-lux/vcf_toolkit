@@ -127,16 +127,39 @@ func buildClusters(contacts []model.Contact, cfg Config) [][]model.Contact {
 	applyBucket(orgBuckets)
 	applyBucket(nameBuckets)
 
-	// Build clusters from connected components.
-	byRoot := make(map[int][]model.Contact, n)
+	// Build clusters from connected components in a stable order.
+	byRoot := make(map[int][]int, n)
+	rootMinIndex := make(map[int]int, n)
 	for i := range n {
 		r := ds.find(i)
-		byRoot[r] = append(byRoot[r], contacts[i])
+		byRoot[r] = append(byRoot[r], i)
+		if minIdx, ok := rootMinIndex[r]; !ok || i < minIdx {
+			rootMinIndex[r] = i
+		}
 	}
 
+	roots := make([]int, 0, len(byRoot))
+	for r := range byRoot {
+		roots = append(roots, r)
+	}
+	sort.Slice(roots, func(i, j int) bool {
+		mi := rootMinIndex[roots[i]]
+		mj := rootMinIndex[roots[j]]
+		if mi == mj {
+			return roots[i] < roots[j]
+		}
+		return mi < mj
+	})
+
 	clusters := make([][]model.Contact, 0, len(byRoot))
-	for _, c := range byRoot {
-		clusters = append(clusters, c)
+	for _, r := range roots {
+		idxs := byRoot[r]
+		sort.Ints(idxs)
+		cluster := make([]model.Contact, 0, len(idxs))
+		for _, idx := range idxs {
+			cluster = append(cluster, contacts[idx])
+		}
+		clusters = append(clusters, cluster)
 	}
 	return clusters
 }

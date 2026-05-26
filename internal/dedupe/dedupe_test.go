@@ -197,6 +197,33 @@ func TestDeduplicate_MultiSignalScoring(t *testing.T) {
 	}
 }
 
+func TestDeduplicate_StableClusterOrder(t *testing.T) {
+	contacts := []model.Contact{
+		{Name: "Zed", Emails: []string{"zed@example.com"}},
+		{Name: "Alice", Emails: []string{"alice@example.com"}},
+		{Name: "Alice Clone", Emails: []string{"Alice@Example.com"}},
+	}
+
+	cfg := DefaultConfig()
+	cfg.EmailExactWeight = 1.0
+	cfg.PhoneExactWeight = 0.0
+	cfg.NameFuzzyWeight = 0.0
+	cfg.OrganizationWeight = 0.0
+	cfg.Threshold = 0.5
+
+	result := Deduplicate(contacts, cfg)
+
+	if len(result.Clusters) != 2 {
+		t.Fatalf("expected 2 clusters, got %d", len(result.Clusters))
+	}
+	if result.Clusters[0][0].Name != "Zed" {
+		t.Fatalf("expected the first cluster to preserve input order, got %q", result.Clusters[0][0].Name)
+	}
+	if result.Clusters[1][0].Name != "Alice" {
+		t.Fatalf("expected the duplicate cluster to follow the singleton cluster, got %q", result.Clusters[1][0].Name)
+	}
+}
+
 func TestMergeIntoOne_DeduplicatesPhonesAndEmails(t *testing.T) {
 	cluster := []model.Contact{
 		{Name: "Alice", Phones: []string{"+1-212-555-0101"}, Emails: []string{"alice@example.com"}},

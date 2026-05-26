@@ -267,35 +267,43 @@ func outputMergedCSV(w io.Writer, result model.DedupeResult) error {
 		return err
 	}
 
-	inMerged := make(map[string]bool)
-	for _, mc := range result.Merged {
-		key := mc.Contact.Name + mc.Contact.Organization
-		inMerged[key] = true
-		if err := writer.Write([]string{
-			mc.Contact.Name,
-			strings.Join(mc.Contact.Phones, "; "),
-			strings.Join(mc.Contact.Emails, "; "),
-			mc.Contact.Organization,
-		}); err != nil {
-			return err
-		}
-	}
-
+	mergeIdx := 0
 	for _, cluster := range result.Clusters {
-		if len(cluster) != 1 {
+		switch len(cluster) {
+		case 0:
 			continue
-		}
-		c := cluster[0]
-		if inMerged[c.Name+c.Organization] {
-			continue
-		}
-		if err := writer.Write([]string{
-			c.Name,
-			strings.Join(c.Phones, "; "),
-			strings.Join(c.Emails, "; "),
-			c.Organization,
-		}); err != nil {
-			return err
+		case 1:
+			if err := writer.Write([]string{
+				cluster[0].Name,
+				strings.Join(cluster[0].Phones, "; "),
+				strings.Join(cluster[0].Emails, "; "),
+				cluster[0].Organization,
+			}); err != nil {
+				return err
+			}
+		default:
+			if mergeIdx < len(result.Merged) {
+				mc := result.Merged[mergeIdx].Contact
+				mergeIdx++
+				if err := writer.Write([]string{
+					mc.Name,
+					strings.Join(mc.Phones, "; "),
+					strings.Join(mc.Emails, "; "),
+					mc.Organization,
+				}); err != nil {
+					return err
+				}
+				continue
+			}
+			// Fallback: keep the first contact in the cluster rather than drop it.
+			if err := writer.Write([]string{
+				cluster[0].Name,
+				strings.Join(cluster[0].Phones, "; "),
+				strings.Join(cluster[0].Emails, "; "),
+				cluster[0].Organization,
+			}); err != nil {
+				return err
+			}
 		}
 	}
 
