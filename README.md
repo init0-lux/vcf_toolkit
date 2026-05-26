@@ -26,7 +26,7 @@ The library is designed around deterministic, local processing by default. Exter
 ### CLI
 
 ```bash
-go install github.com/init0/vcf-toolkit@latest
+go install github.com/init0-lux/vcf-toolkit@latest
 ```
 
 This installs the `vcf-toolkit` binary if your `GOBIN` or `GOPATH/bin` is on `PATH`.
@@ -34,7 +34,7 @@ This installs the `vcf-toolkit` binary if your `GOBIN` or `GOPATH/bin` is on `PA
 ### From source
 
 ```bash
-git clone https://github.com/init0/vcf-toolkit.git
+git clone https://github.com/init0-lux/vcf-toolkit.git
 cd vcf-toolkit
 go build ./...
 ```
@@ -101,7 +101,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/init0/vcf-toolkit/convert"
+	"github.com/init0-lux/vcf-toolkit/convert"
 )
 
 func main() {
@@ -132,8 +132,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/init0/vcf-toolkit/dedupe"
-	"github.com/init0/vcf-toolkit/model"
+	"github.com/init0-lux/vcf-toolkit/dedupe"
+	"github.com/init0-lux/vcf-toolkit/model"
 )
 
 func main() {
@@ -155,7 +155,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/init0/vcf-toolkit/normalize"
+	"github.com/init0-lux/vcf-toolkit/normalize"
 )
 
 func main() {
@@ -188,7 +188,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/init0/vcf-toolkit/vcf"
+	"github.com/init0-lux/vcf-toolkit/vcf"
 )
 
 func main() {
