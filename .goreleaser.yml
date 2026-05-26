@@ -1,5 +1,5 @@
 # .goreleaser.yml
-version:2
+version: 2
 
 project_name: vcf-toolkit
 
@@ -9,7 +9,7 @@ before:
 
 builds:
   - env:
-    - CGO_ENABLED=0
+      - CGO_ENABLED=0
 
     goos:
       - linux
@@ -23,22 +23,22 @@ builds:
 
 archives:
   - format_overrides:
-    - goos: windows
-      format: zip
+      - goos: windows
+        format: zip
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
-      - '^merge'
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^merge"
 
 release:
   github:
     owner: init0-lux
-    name: vcf-toolkit
+    name: vcf_toolkit
