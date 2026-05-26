@@ -1,0 +1,9 @@
+BEGIN:VCARD
+VERSION:4.0
+PRODID:-//vcf-toolkit//EN
+FN:Doe\, John & Jane
+N:Jane;Doe\,;John &;;;
+TEL;VALUE=uri:tel:+12125550100
+EMAIL:test@example.com
+ORG:Acme\;Corp
+END:VCARD

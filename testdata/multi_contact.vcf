@@ -1,0 +1,45 @@
+BEGIN:VCARD
+VERSION:4.0
+PRODID:-//vcf-toolkit//EN
+FN:John Doe
+N:Doe;John;;;
+TEL;VALUE=uri:tel:+12125550100
+EMAIL:john.doe@acme.com
+ORG:Acme Corp
+END:VCARD
+BEGIN:VCARD
+VERSION:4.0
+PRODID:-//vcf-toolkit//EN
+FN:Jane Smith
+N:Smith;Jane;;;
+TEL;VALUE=uri:tel:+14155550199
+EMAIL:jane.smith@globex.com
+ORG:Globex Inc
+END:VCARD
+BEGIN:VCARD
+VERSION:4.0
+PRODID:-//vcf-toolkit//EN
+FN:Bob Johnson
+N:Johnson;Bob;;;
+TEL;VALUE=uri:tel:+442079460958
+EMAIL:bob.johnson@test.co.uk
+ORG:Test Ltd
+END:VCARD
+BEGIN:VCARD
+VERSION:4.0
+PRODID:-//vcf-toolkit//EN
+FN:Alice Williams
+N:Williams;Alice;;;
+TEL;VALUE=uri:tel:+919876543210
+EMAIL:alice.w@example.in
+ORG:Example Corp
+END:VCARD
+BEGIN:VCARD
+VERSION:4.0
+PRODID:-//vcf-toolkit//EN
+FN:Charlie Brown
+N:Brown;Charlie;;;
+TEL;VALUE=uri:tel:+12125550101
+EMAIL:charlie@acme.com
+ORG:Acme Corp
+END:VCARD
