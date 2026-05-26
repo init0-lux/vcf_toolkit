@@ -4,7 +4,7 @@
   "description": "Run vcf-toolkit via npx",
   "repository": {
     "type": "git",
-    "url": "https://github.com/init0-lux/vcf-toolkit.git"
+    "url": "git+https://github.com/init0-lux/vcf_toolkit.git"
   },
   "bin": {
     "vcf-toolkit": "bin/vcf-toolkit.js"
